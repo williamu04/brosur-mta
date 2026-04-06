@@ -1,0 +1,46 @@
+name: Fetch Brosur MTA Mingguan
+
+on:
+  schedule:
+    - cron: '0 23 * * 0' 
+  workflow_dispatch:
+
+permissions: 
+  contents: write
+
+jobs:
+  fetch-brosur:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          
+      - name: setup python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+          cache: 'pip'
+
+      - name: install deps
+        run: |
+          pip install requests beautifulsoup4
+
+      - name: run fetcher
+        id: fetcher
+        run: python scripts/fetch_brosur.py
+
+      - name: commit & push
+        if: steps.fetcher.outputs.new == 'true'
+        run: |
+          git config user.name = "github-action[bot]"
+          git config user.email = "github-actions[bot]@users.noreply.github.com"
+          git add brosur/
+          git commit -m "chore: add ${{steps.fetcher.outputs.count}} new brosur [$(date + '%Y-%m-%d')]"
+          git push
+
+
+
+      
